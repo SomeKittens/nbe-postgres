@@ -20,11 +20,15 @@ methods.init = function () {
       // Create them dbs
       return client.queryAsync('CREATE DATABASE nbe')
       .then(function() {
-        return client.queryAsync('CREATE TABLE nbe_articles (' +
-          ' id SERIAL PRIMARY KEY,' +
-          ' title TEXT,' +
-          ' content TEXT' +
-          ')');
+        closeDb();
+        return methods.getDb().then(function() {
+          return this.client.queryAsync('CREATE TABLE articles (' +
+            ' id SERIAL PRIMARY KEY,' +
+            ' title TEXT,' +
+            ' content TEXT,' +
+            ' published DATE DEFAULT now()' +
+            ')');
+        });
       });
     }
   }).finally(closeDb);
@@ -35,19 +39,18 @@ methods.destroy = function () {
   return pg.connectAsync(connString + 'postgres').spread(function(dbClient, close) {
     client = dbClient;
     closeDb = close;
-    return client.queryAsync('DROP TABLE nbe_articles');
+    return client.queryAsync('DROP TABLE articles');
   }).then(function() {
     return client.queryAsync('DROP DATABASE nbe');
   }).finally(closeDb);
 };
 
 methods.getDb = function () {
-  return function () {
-    var closeDb;
-    return pg.connectAsync(connString + 'nbe').spread(function(client, close){
-      closeDb = close;
-    }).finally(function(){ closeDb(); });
-  };
+  var closeDb;
+  return pg.connectAsync(connString + 'nbe').bind({}).spread(function(client, close){
+    closeDb = close;
+    this.client = client;
+  }).finally(closeDb);
 };
 
 module.exports = function (connectionString) {

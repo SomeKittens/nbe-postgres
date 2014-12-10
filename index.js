@@ -2,7 +2,7 @@
 
 var bluebird = require('bluebird');
 
-var db = require('./db');
+var db;
 
 exports.init = function(connString) {
   db = require('./db')(connString);
@@ -13,8 +13,14 @@ exports.init = function(connString) {
 // Holy CRUD!
 exports.getArticle = function(id) {
   return db.getDb().then(function() {
-    return this.client.queryAsync('SELECT id, title, content FROM articles WHERE id = $1', id);
+    return this.client.queryAsync('SELECT id, title, content FROM articles WHERE id = $1', [id]);
   }).get('rows').get(0);
+};
+
+exports.getAllArticles = function () {
+  return db.getDb().then(function() {
+    return this.client.queryAsync('SELECT id, title, content FROM articles');
+  }).get('rows');
 };
 
 exports.saveArticle = function(article) {
@@ -34,12 +40,12 @@ exports.deleteArticle = function(id) {
 
 exports.createArticle = function() {
   return db.getDb().then(function() {
-    return this.client.queryAsync('INSERT INTO articles RETURNING id');
+    return this.client.queryAsync('INSERT INTO articles DEFAULT VALUES RETURNING id');
   }).get('rows').get(0).get('id');
 };
 
 exports.getFrontpage = function() {
   return db.getDb().then(function() {
-    return this.client.queryAsync('SELECT id, title, content FROM articles ORDER BY published DESC');
+    return this.client.queryAsync('SELECT id, title, content FROM articles ORDER BY published DESC LIMIT 10');
   }).get('rows');
 };
