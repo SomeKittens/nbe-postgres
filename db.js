@@ -21,7 +21,7 @@ methods.init = function () {
       return client.queryAsync('CREATE DATABASE nbe')
       .then(function() {
         closeDb();
-        return methods.getDb().then(function() {
+        return methods.getDb(function() {
           return this.client.queryAsync('CREATE TABLE articles (' +
             ' id SERIAL PRIMARY KEY,' +
             ' title TEXT,' +
@@ -45,11 +45,11 @@ methods.destroy = function () {
   }).finally(closeDb);
 };
 
-methods.getDb = function () {
+methods.getDb = function (fn) {
   var closeDb;
   return pg.connectAsync(connString + 'nbe').bind({}).spread(function(client, close){
     closeDb = close;
-    this.client = client;
+    return fn(client);
   }).finally(closeDb);
 };
 

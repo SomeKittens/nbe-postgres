@@ -12,20 +12,20 @@ exports.init = function(connString) {
 
 // Holy CRUD!
 exports.getArticle = function(id) {
-  return db.getDb().then(function() {
-    return this.client.queryAsync('SELECT id, title, content FROM articles WHERE id = $1', [id]);
+  return db.getDb(function(client) {
+    return client.queryAsync('SELECT id, title, content FROM articles WHERE id = $1', [id]);
   }).get('rows').get(0);
 };
 
 exports.getAllArticles = function () {
-  return db.getDb().then(function() {
-    return this.client.queryAsync('SELECT id, title, content FROM articles');
+  return db.getDb(function (client) {
+    return client.queryAsync('SELECT id, title, content FROM articles');
   }).get('rows');
 };
 
 exports.saveArticle = function(article) {
-  return db.getDb().then(function() {
-    return this.client.queryAsync('UPDATE articles' +
+  return db.getDb(function (client) {
+    return client.queryAsync('UPDATE articles' +
       ' SET title = $1, content = $2' +
       ' WHERE id = $3',
       [article.title, article.content, article.id]);
@@ -33,19 +33,19 @@ exports.saveArticle = function(article) {
 };
 
 exports.deleteArticle = function(id) {
-  return db.getDb().then(function() {
-    return this.client.queryAsync('DELETE FROM articles WHERE id = $1', [id]);
+  return db.getDb(function (client) {
+    return client.queryAsync('DELETE FROM articles WHERE id = $1', [id]);
   });
 };
 
 exports.createArticle = function() {
-  return db.getDb().then(function() {
-    return this.client.queryAsync('INSERT INTO articles DEFAULT VALUES RETURNING id');
+  return db.getDb(function (client) {
+    return client.queryAsync('INSERT INTO articles DEFAULT VALUES RETURNING id');
   }).get('rows').get(0).get('id');
 };
 
 exports.getFrontpage = function() {
-  return db.getDb().then(function() {
-    return this.client.queryAsync('SELECT id, title, content FROM articles ORDER BY published DESC LIMIT 10');
+  return db.getDb(function (client) {
+    return client.queryAsync('SELECT id, title, content FROM articles ORDER BY published DESC LIMIT 10');
   }).get('rows');
 };
