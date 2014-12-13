@@ -15,23 +15,34 @@ methods.init = function () {
     client = dbClient;
     closeDb = close;
     return client.queryAsync('SELECT 1 AS result FROM pg_database WHERE datname = \'nbe\'');
-  }).then(function(results) {
+  })
+  .then(function(results) {
     if (!results.rowCount) {
       // Create them dbs
-      return client.queryAsync('CREATE DATABASE nbe')
-      .then(function() {
-        closeDb();
-        return methods.getDb(function() {
-          return this.client.queryAsync('CREATE TABLE articles (' +
+      return client.queryAsync('CREATE DATABASE nbe');
+    }
+  })
+  .then(function(result) {
+    closeDb();
+    if (result) {
+      return methods.getDb(function(client) {
+        return bluebird.all([
+          client.queryAsync('CREATE TABLE articles (' +
             ' id SERIAL PRIMARY KEY,' +
             ' title TEXT,' +
             ' content TEXT,' +
             ' published DATE DEFAULT now()' +
-            ')');
-        });
+          ')'),
+          client.queryAsync('CREATE TABLE users (' +
+            ' id SERIAL PRIMARY KEY,' +
+            ' username VARCHAR(150) NOT NULL,' +
+            ' passwordHash VARCHAR(60) NOT NULL' +
+          ')')
+        ]);
       });
     }
-  }).finally(closeDb);
+  })
+  .finally(closeDb);
 };
 
 methods.destroy = function () {
@@ -40,9 +51,11 @@ methods.destroy = function () {
     client = dbClient;
     closeDb = close;
     return client.queryAsync('DROP TABLE articles');
-  }).then(function() {
+  })
+  .then(function() {
     return client.queryAsync('DROP DATABASE nbe');
-  }).finally(closeDb);
+  })
+  .finally(closeDb);
 };
 
 methods.getDb = function (fn) {
@@ -50,7 +63,8 @@ methods.getDb = function (fn) {
   return pg.connectAsync(connString + 'nbe').bind({}).spread(function(client, close){
     closeDb = close;
     return fn(client);
-  }).finally(closeDb);
+  })
+  .finally(closeDb);
 };
 
 module.exports = function (connectionString) {
