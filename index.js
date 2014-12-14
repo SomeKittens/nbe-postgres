@@ -2,29 +2,22 @@
 
 var bluebird = require('bluebird');
 
-var db;
-
-// TODO: not have a singleton db
-exports.init = function(connString) {
-  db = require('./db')(connString);
-  // Initalize db
-  return db.init();
-};
+var methods = {};
 
 // Holy CRUD!
-exports.getArticle = function(id) {
+methods.getArticle = function(id) {
   return db.getDb(function(client) {
     return client.queryAsync('SELECT id, title, content FROM articles WHERE id = $1', [id]);
   }).get('rows').get(0);
 };
 
-exports.getAllArticles = function () {
+methods.getAllArticles = function () {
   return db.getDb(function (client) {
     return client.queryAsync('SELECT id, title, content FROM articles');
   }).get('rows');
 };
 
-exports.saveArticle = function(article) {
+methods.saveArticle = function(article) {
   return db.getDb(function (client) {
     return client.queryAsync('UPDATE articles' +
       ' SET title = $1, content = $2' +
@@ -33,40 +26,57 @@ exports.saveArticle = function(article) {
   });
 };
 
-exports.deleteArticle = function(id) {
+methods.deleteArticle = function(id) {
   return db.getDb(function (client) {
     return client.queryAsync('DELETE FROM articles WHERE id = $1', [id]);
   });
 };
 
-exports.createArticle = function() {
+methods.createArticle = function() {
   return db.getDb(function (client) {
     return client.queryAsync('INSERT INTO articles DEFAULT VALUES RETURNING id');
   }).get('rows').get(0).get('id');
 };
 
-exports.getFrontpage = function() {
+methods.getFrontpage = function() {
   return db.getDb(function (client) {
     return client.queryAsync('SELECT id, title, content FROM articles ORDER BY published DESC LIMIT 10');
   }).get('rows');
 };
 
 // User auth stuff
-exports.getUserById = function (id) {
+methods.getUserById = function (id) {
   return db.getDb(function (client) {
     return client.queryAsync('SELECT id, username, passwordHash FROM users WHERE id = $1', [id]);
   }).get('rows').get(0);
 };
 
 // User auth stuff
-exports.getUserByName = function (username) {
+methods.getUserByName = function (username) {
   return db.getDb(function (client) {
     return client.queryAsync('SELECT id, username, passwordHash FROM users WHERE username = $1', [username]);
   }).get('rows').get(0);
 };
 
-exports.createLocalUser = function(username, password) {
+methods.createLocalUser = function(username, password) {
   return db.getDb(function (client) {
     return client.queryAsync('INSERT INTO users (username, passwordHash) VALUES ($1, $2) RETURNING id', [username, password]);
   }).get('rows').get(0).get('id');
+};
+
+methods.init = function () {
+  return db.init();
+};
+
+methods.destroy = function () {
+  return db.destroy();
+};
+
+var db;
+
+// TODO: not have a singleton db
+module.exports = function(connString) {
+  db = require('./db')(connString);
+  // Initalize db
+  return methods;
 };

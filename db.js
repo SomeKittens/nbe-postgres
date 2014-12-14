@@ -42,7 +42,11 @@ methods.init = function () {
       });
     }
   })
-  .finally(closeDb);
+  .finally(function() {
+    if (closeDb) {
+      closeDb();
+    }
+  });
 };
 
 methods.destroy = function () {
@@ -50,9 +54,6 @@ methods.destroy = function () {
   return pg.connectAsync(connString + 'postgres').spread(function(dbClient, close) {
     client = dbClient;
     closeDb = close;
-    return client.queryAsync('DROP TABLE articles');
-  })
-  .then(function() {
     return client.queryAsync('DROP DATABASE nbe');
   })
   .finally(closeDb);
@@ -64,7 +65,9 @@ methods.getDb = function (fn) {
     closeDb = close;
     return fn(client);
   })
-  .finally(closeDb);
+  .finally(function() {
+    closeDb();
+  });
 };
 
 module.exports = function (connectionString) {
